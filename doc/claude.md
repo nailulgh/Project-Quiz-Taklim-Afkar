@@ -1,47 +1,121 @@
 # Ta'lim Afkar — Claude AI Agent Operational Guide
 
-**Version:** 1.0.0  
-**Target Agents:** Claude (primary), Gemini, Cursor, GPT-based agents  
-**Last Updated:** 2026-05  
+**Version:** 1.1.0
+**Target Agents:** Claude (primary via Antigravity), Gemini, Cursor, GPT-based agents
+**ADE:** Google Antigravity
+**Last Updated:** 2026-05
 **Related:** [`srs.md`](./srs.md) · [`design.md`](./design.md) · [`todo.md`](./todo.md) · [`changelog.md`](./changelog.md)
 
 ---
 
 ## ⚠️ CRITICAL: Read This First
 
-Kamu adalah AI coding agent yang bekerja pada proyek Ta'lim Afkar — sebuah platform pembelajaran Islam berbasis gamifikasi. Dokumen ini adalah **panduan operasional wajib** yang harus dibaca dan dipatuhi **sebelum melakukan perubahan apapun** pada kodebase.
+Kamu adalah AI coding agent yang bekerja pada proyek **Ta'lim Afkar** — platform pembelajaran Islam berbasis gamifikasi. Dokumen ini adalah **panduan operasional wajib** yang harus dibaca dan dipatuhi **sebelum melakukan perubahan apapun**.
 
-**Pelanggaran terhadap panduan ini akan menghasilkan:**
-- Arsitektur yang tidak konsisten
-- Regresi bug
-- Technical debt yang sulit dibersihkan
-- Kerusakan pada sistem yang sedang berjalan
+Proyek ini dikerjakan di dalam **Google Antigravity ADE**. Antigravity adalah Agentic Development Environment yang memberikan kamu kemampuan untuk merencanakan, mengeksekusi, memvalidasi, dan melakukan iterasi secara otonom. Namun, otonomi ini hanya efektif jika kamu mematuhi panduan di dokumen ini.
+
+**Arsitektur proyek ini adalah: Fullstack Tradisional Terpisah (Client-Server)**
+
+```
+talim-afkar-api/   → Hono.js REST API + WebSocket Server
+talim-afkar-web/   → Next.js 14 Frontend
+```
+
+Keduanya adalah project/repository terpisah yang di-deploy secara independen.
 
 ---
 
 ## Table of Contents
 
-1. [Development Philosophy](#1-development-philosophy)
-2. [Coding Standards](#2-coding-standards)
-3. [Architectural Constraints](#3-architectural-constraints)
-4. [Modular Development Rules](#4-modular-development-rules)
-5. [Safe Modification Rules](#5-safe-modification-rules)
-6. [Dependency Management](#6-dependency-management)
-7. [Task Decomposition Strategy](#7-task-decomposition-strategy)
-8. [Context Preservation Strategy](#8-context-preservation-strategy)
-9. [Prompt Chaining Strategy](#9-prompt-chaining-strategy)
+1. [Orientasi Antigravity](#1-orientasi-antigravity)
+2. [Development Philosophy](#2-development-philosophy)
+3. [Coding Standards](#3-coding-standards)
+4. [Architectural Constraints](#4-architectural-constraints)
+5. [Domain Boundaries (API)](#5-domain-boundaries-api)
+6. [Frontend Rules (Web)](#6-frontend-rules-web)
+7. [Safe Modification Rules](#7-safe-modification-rules)
+8. [Dependency Management](#8-dependency-management)
+9. [Task Decomposition Strategy (Antigravity)](#9-task-decomposition-strategy-antigravity)
 10. [Testing Workflow](#10-testing-workflow)
 11. [Validation Workflow](#11-validation-workflow)
 12. [Documentation Update Workflow](#12-documentation-update-workflow)
 13. [Git Workflow](#13-git-workflow)
-14. [Refactoring Rules](#14-refactoring-rules)
+14. [Antigravity-Specific Behaviors](#14-antigravity-specific-behaviors)
 15. [AI Collaboration Strategy](#15-ai-collaboration-strategy)
 16. [Anti-Chaos Engineering Rules](#16-anti-chaos-engineering-rules)
 17. [Technical Debt Prevention](#17-technical-debt-prevention)
 
 ---
 
-## 1. Development Philosophy
+## 1. Orientasi Antigravity
+
+### Cara Kerja di Antigravity
+
+Antigravity memisahkan dua concern:
+
+- **Agent Manager** — tempat kamu menerima instruksi, merencanakan, dan mengeksekusi alur kerja
+- **Editor** — tempat kamu membaca dan memodifikasi kode secara langsung
+
+### Mode yang Harus Dipilih
+
+```
+MODE PLANNING:
+  Gunakan untuk:
+  - Implementasi fitur baru (Game Engine, Auth System, dll)
+  - Refactoring besar (multiple files)
+  - Setup infrastruktur (DB schema, queue system)
+  - Task yang membutuhkan riset dokumentasi dulu
+
+  Cara kerja di Planning mode:
+  1. Kamu akan menyajikan Implementation Plan (Artefak)
+  2. Developer mereview dan memberi komentar
+  3. Setelah disetujui, kamu lanjut ke implementasi
+  4. Sajikan Code Diff Artefak sebelum apply
+
+MODE FAST:
+  Gunakan untuk:
+  - Fix typo atau rename variabel
+  - Update dokumentasi kecil
+  - Menjalankan perintah terminal sederhana (npm test, dll)
+  - Task yang sangat terisolasi dan jelas
+```
+
+### Artefak yang WAJIB Disajikan Sebelum Kode
+
+Setiap task besar WAJIB menyajikan Artefak untuk direview:
+
+```
+1. IMPLEMENTATION PLAN
+   - Daftar file yang akan dibuat/dimodifikasi
+   - Perubahan arsitektur jika ada
+   - Dependencies baru jika ada
+   - Apakah ada database migration?
+   - Estimasi kompleksitas
+
+2. TASK LIST
+   Rencana step-by-step yang akan dieksekusi
+
+3. CODE DIFFS (setelah developer approve plan)
+   Tampilkan diff sebelum apply untuk perubahan signifikan
+```
+
+### Sebelum Memulai SETIAP Task
+
+```
+Checklist wajib sebelum menulis satu baris kode:
+□ Sudah baca design.md section yang relevan?
+□ Sudah baca srs.md requirement yang relevan?
+□ Sudah cek todo.md untuk dependencies task?
+□ Sudah baca existing code di area yang akan dimodifikasi?
+□ Sudah identifikasi semua file yang akan terpengaruh?
+□ Task ini di repo API atau Web (atau keduanya)?
+□ Apakah perlu database migration?
+□ Apakah perlu update @talim-afkar/types?
+```
+
+---
+
+## 2. Development Philosophy
 
 ### Core Principles
 
@@ -51,7 +125,7 @@ Kamu adalah AI coding agent yang bekerja pada proyek Ta'lim Afkar — sebuah pla
    Jangan tambahkan abstraksi yang tidak diperlukan saat ini.
 
 2. DOMAIN INTEGRITY
-   Setiap perubahan harus menghormati domain boundaries yang ada di design.md.
+   Setiap perubahan harus menghormati domain boundaries (design.md section 5).
    Tidak ada shortcut lintas domain yang bypass interface resmi.
 
 3. TESTABILITY AS PREREQUISITE
@@ -62,7 +136,11 @@ Kamu adalah AI coding agent yang bekerja pada proyek Ta'lim Afkar — sebuah pla
    Kode yang eksplisit lebih baik daripada yang "pintar".
    AI agents (dan manusia) harus bisa membaca kode tanpa konteks tersembunyi.
 
-5. DOCUMENTATION SYNCHRONY
+5. API-FIRST CONTRACT
+   API adalah kontrak antara talim-afkar-api dan talim-afkar-web.
+   Perubahan API contract = breaking change = versi baru = komunikasi eksplisit.
+
+6. DOCUMENTATION SYNCHRONY
    Setiap perubahan arsitektur harus diikuti update pada docs/*.md.
    Kode dan dokumentasi harus selalu sinkron.
 ```
@@ -70,663 +148,573 @@ Kamu adalah AI coding agent yang bekerja pada proyek Ta'lim Afkar — sebuah pla
 ### What This Project Is NOT
 
 ```
-❌ Bukan eksperimen teknikal
-❌ Bukan showcase teknologi terbaru
-❌ Bukan proyek untuk "mencoba hal baru yang menarik"
+❌ Bukan eksperimen teknikal — ini adalah platform produksi nyata
+❌ Bukan showcase teknologi terbaru — simplicity > novelty
+❌ Bukan proyek monorepo — API dan Web adalah dua unit terpisah
 
-✅ Ini adalah platform produksi yang akan digunakan mahasantri nyata
-✅ Setiap keputusan harus mempertimbangkan maintainability jangka panjang
+✅ Platform produksi untuk mahasantri pesantren Indonesia
+✅ Setiap keputusan mempertimbangkan maintainability jangka panjang
 ✅ Simplicity > Cleverness
 ```
 
 ---
 
-## 2. Coding Standards
+## 3. Coding Standards
 
-### 2.1 TypeScript Rules
+### 3.1 TypeScript Rules (Berlaku di API dan Web)
 
 ```typescript
 // ✅ WAJIB: Explicit return types pada semua function publik
 async function createGameSession(userId: string, mode: GameMode): Promise<GameSession> { ... }
 
-// ✅ WAJIB: Zod schema untuk semua external input
+// ✅ WAJIB: Zod schema untuk semua external input (API) dan form input (Web)
 const CreateSessionSchema = z.object({
   mode: z.enum(['kilat_fiqih', 'tebak_kitab', 'duel_afkar', 'tangga_ilmu', 'urutan_dalil']),
   kitabId: z.string().uuid().optional(),
 })
 
-// ✅ WAJIB: Error handling eksplisit, tidak ada silent fails
+// ✅ WAJIB: Error handling eksplisit
 const result = await questionService.findById(id)
 if (!result) throw new NotFoundError(`Question ${id} tidak ditemukan`)
 
-// ❌ DILARANG: any type tanpa komentar justifikasi
+// ❌ DILARANG: any type tanpa justifikasi
 const data: any = response.json()  // TIDAK BOLEH
 
-// ❌ DILARANG: non-null assertion tanpa validasi sebelumnya
+// ❌ DILARANG: non-null assertion tanpa validasi
 const name = user!.profile!.name  // BERBAHAYA
 
 // ✅ Optional chaining yang aman
 const name = user?.profile?.name ?? 'Anonymous'
 ```
 
-### 2.2 Naming Conventions
+### 3.2 Naming Conventions
 
 ```
-Files:
+API Files:
   kebab-case.ts                    → kilat-fiqih.engine.ts
   kebab-case.service.ts            → game.service.ts
   kebab-case.repository.ts         → question.repository.ts
   kebab-case.routes.ts             → game.routes.ts
-  kebab-case.schema.ts             → auth.schema.ts (Zod schemas)
+  kebab-case.schema.ts             → auth.schema.ts
   kebab-case.test.ts               → game.service.test.ts
 
-TypeScript:
+Web Files:
+  PascalCase.tsx                   → QuestionCard.tsx (components)
+  camelCase.ts                     → useGameSession.ts (hooks)
+  kebab-case/page.tsx              → kilat-fiqih/page.tsx (App Router)
+
+TypeScript (keduanya):
   PascalCase                       → GameSession, UserProfile
   camelCase                        → createSession, userId
   SCREAMING_SNAKE_CASE             → MAX_ELO_CHANGE, DEFAULT_TIMER_MS
-  Interfaces prefix 'I'?           → TIDAK, gunakan langsung: GameSession, tidak IGameSession
 
 Database (Drizzle):
   snake_case                       → game_sessions, user_id, created_at
   Table names: plural              → questions, users, game_sessions
 ```
 
-### 2.3 Function Size Rules
-
-```
-Aturan 30-50 baris:
-  - Setiap function maksimal 50 baris
-  - Jika lebih: extract helper functions
-  - Service methods: fokus satu responsibility
-
-Aturan Single Responsibility:
-  - satu function = satu hal yang jelas
-  - nama function harus menjelaskan SEMUA yang dilakukan
-
-Contoh refactor:
-  // ❌ TERLALU BANYAK RESPONSIBILITY
-  async function processGameAnswer(sessionId, questionId, answer, userId) {
-    // validate session... (20 baris)
-    // calculate score... (15 baris)
-    // update streak... (10 baris)
-    // check achievements... (15 baris)
-    // notify... (10 baris)
-  }
-
-  // ✅ SETELAH REFACTOR
-  async function processGameAnswer(dto: SubmitAnswerDto): Promise<AnswerResult> {
-    const session = await this.validateActiveSession(dto.sessionId, dto.userId)
-    const result = this.calculateAnswerResult(dto, session)
-    await this.persistAnswer(result)
-    this.eventBus.emit('game.answer_submitted', result)
-    return result
-  }
-```
-
-### 2.4 Error Handling Pattern
+### 3.3 Error Handling Pattern (API)
 
 ```typescript
-// Custom error classes (di shared/errors/)
+// src/shared/errors/index.ts
 export class AppError extends Error {
   constructor(
     message: string,
     public readonly code: string,
     public readonly statusCode: number,
-    public readonly details?: unknown
+    public readonly details?: unknown,
   ) {
-    super(message)
-    this.name = 'AppError'
+    super(message);
+    this.name = "AppError";
   }
 }
 
 export class NotFoundError extends AppError {
   constructor(resource: string) {
-    super(`${resource} tidak ditemukan`, 'NOT_FOUND', 404)
+    super(`${resource} tidak ditemukan`, "NOT_FOUND", 404);
   }
 }
 
 export class ForbiddenError extends AppError {
   constructor(action?: string) {
     super(
-      action ? `Tidak diizinkan: ${action}` : 'Akses ditolak',
-      'FORBIDDEN',
-      403
-    )
+      action ? `Tidak diizinkan: ${action}` : "Akses ditolak",
+      "FORBIDDEN",
+      403,
+    );
   }
 }
 
 export class ValidationError extends AppError {
   constructor(details: ZodError) {
-    super('Input tidak valid', 'VALIDATION_ERROR', 400, details.flatten())
+    super("Input tidak valid", "VALIDATION_ERROR", 400, details.flatten());
   }
 }
+```
 
-// Pattern: semua async handler dibungkus error handler di middleware
-// JANGAN throw error mentah dari route handler
+### 3.4 Function Size Rules
+
+```
+Maksimal 50 baris per function.
+Jika lebih: extract helper functions.
+Satu function = satu responsibility yang jelas.
+
+✅ CONTOH BAIK:
+async function processGameAnswer(dto: SubmitAnswerDto): Promise<AnswerResult> {
+  const session = await this.validateActiveSession(dto.sessionId, dto.userId)
+  const result = this.calculateAnswerResult(dto, session)
+  await this.persistAnswer(result)
+  this.eventBus.emit('game.answer_submitted', result)
+  return result
+}
 ```
 
 ---
 
-## 3. Architectural Constraints
+## 4. Architectural Constraints
 
-### 3.1 Constraints yang Tidak Dapat Dilanggar
+### Constraints API (talim-afkar-api)
 
 ```
-CONSTRAINT-01: Domain Isolation
+CONSTRAINT-API-01: Domain Isolation
   Modul TIDAK BOLEH mengimport langsung dari modul lain.
   Gunakan: service interface, event bus, atau shared types.
-  
+
   SALAH:  import { UserRepository } from '../user/user.repository'
   BENAR:  inject UserService → panggil userService.findById()
 
-CONSTRAINT-02: Database Ownership
+CONSTRAINT-API-02: Database Ownership
   Setiap tabel "dimiliki" satu modul.
   Query ke tabel modul lain HARUS melalui service interface-nya.
-  Tidak ada cross-domain JOIN di query level.
 
-CONSTRAINT-03: Event Bus untuk Cross-Domain Effects
+CONSTRAINT-API-03: Event Bus untuk Cross-Domain Effects
   Side effects lintas domain HARUS menggunakan event bus.
-  CONTOH: game completion → XP update → streak check → achievement check
-  Ini adalah chain event, bukan direct function call lintas modul.
+  CONTOH: game completion → XP → streak → achievement = chain events
 
-CONSTRAINT-04: Realtime State di Redis
-  State game real-time (session aktif, room, score live) HARUS di Redis.
+CONSTRAINT-API-04: Realtime State di Redis
+  State game real-time HARUS di Redis.
   PostgreSQL hanya untuk state final setelah session selesai.
 
-CONSTRAINT-05: AI Calls Selalu Async
-  Tidak ada AI API call yang blocking request/response cycle.
-  Semua AI calls → queue jobs → hasil disimpan → user di-notify.
-  Pengecualian: AI Tutor chat (user menunggu jawaban, max 10 detik timeout).
-
-CONSTRAINT-06: Server-Side Score Authority
-  Semua perhitungan skor, XP, ELO HARUS di server.
+CONSTRAINT-API-05: Server-Side Score Authority
+  Semua perhitungan skor, XP, ELO HARUS di server API.
   Client tidak pernah mengirim "skor saya X".
   Client mengirim "jawaban saya A untuk soal X pada detik ke-7".
+
+CONSTRAINT-API-06: AI Calls Selalu Async (kecuali Tutor)
+  AI API call untuk generasi soal → wajib via BullMQ queue.
+  Pengecualian: AI Tutor chat (max 10 detik timeout, streaming).
 ```
 
-### 3.2 Technology Constraints
+### Constraints Web (talim-afkar-web)
 
 ```
-JANGAN menambahkan dependency baru tanpa:
-  1. Cek apakah sudah ada library existing yang bisa digunakan
-  2. Evaluasi bundle size impact (frontend)
-  3. Evaluasi security & maintenance status library
-  4. Update CHANGELOG.md dengan keputusan ini
+CONSTRAINT-WEB-01: Zero Direct Database Access
+  Web TIDAK BOLEH terhubung langsung ke PostgreSQL atau Redis.
+  Semua data HARUS via API atau WebSocket.
 
-JANGAN mengubah database schema tanpa:
-  1. Menulis migration file dengan Drizzle
-  2. Testing migration di environment lokal
-  3. Mempertimbangkan backward compatibility
-  4. Update ERD di design.md jika ada perubahan signifikan
+CONSTRAINT-WEB-02: Centralized API Client
+  Semua HTTP calls WAJIB menggunakan src/lib/api-client.ts.
+  Tidak ada fetch() atau axios langsung di components/pages.
+
+CONSTRAINT-WEB-03: Token Management
+  Access token: simpan di Zustand state (memory only, bukan localStorage)
+  Refresh token: HTTP-only cookie (dimanage otomatis oleh browser)
+
+CONSTRAINT-WEB-04: No Business Logic in Components
+  React components hanya untuk UI rendering dan event handling.
+  Business logic → custom hooks → api-client → API
+
+CONSTRAINT-WEB-05: Game State Authority
+  Frontend tidak menghitung skor, XP, atau ELO.
+  Frontend hanya menampilkan state yang diterima dari API/WebSocket.
 ```
 
 ---
 
-## 4. Modular Development Rules
+## 5. Domain Boundaries (API)
 
-### 4.1 Cara Benar Mengembangkan Modul
+### Panduan Per Domain
 
 ```
-Urutan pengembangan fitur baru:
-  1. Tentukan domain modul mana yang bertanggung jawab
-  2. Desain interface publik modul (TypeScript types/interfaces)
-  3. Tulis test terlebih dahulu (TDD jika memungkinkan)
-  4. Implementasi repository (database layer)
-  5. Implementasi service (business logic)
-  6. Implementasi routes (HTTP layer)
-  7. Registrasi routes di app
-  8. Update dokumentasi
+AUTH Module (src/modules/auth/)
+  Owns: users, refresh_tokens tables
+  Responsible for: JWT generation, token validation, password hashing
+  Exposes: authenticate middleware, verifyToken utility
+  Never: akses tabel profile, game, dll langsung
 
-Cara SALAH:
-  ❌ Langsung coding di route handler tanpa desain
-  ❌ Menyebar logic game di berbagai file tanpa struktur
-  ❌ Langsung akses database dari route handler
+USER Module (src/modules/user/)
+  Owns: profiles, user_stats, xp_logs, institutions tables
+  Exposes: userService.findById(), userService.updateStats()
+  Listens to: game:session_completed → update stats
+  Never: logic autentikasi, game logic
+
+GAME Module (src/modules/game/)
+  Owns: game_sessions, game_answers, learning_progressions
+  Contains: semua game engines (kilat-fiqih, dll)
+  Emits: game:session_completed, game:duel_result
+  Never: akses profiles langsung, buat achievement langsung
+
+CONTENT Module (src/modules/content/)
+  Owns: kitabs, babs, questions, matan_excerpts
+  Exposes: questionService.getForGame(), questionService.approve()
+  Emits: question:approved
+  Never: akses user data, game session data
+
+CLASSROOM Module (src/modules/classroom/)
+  Owns: classrooms, classroom_members
+  Exposes: classroomService.findById(), classroomService.getMembers()
+  Never: logic game, logic auth
+
+GAMIFICATION Module (src/modules/gamification/)
+  Owns: achievements, user_achievements, streak logic
+  Listens to: game:session_completed, game:duel_result
+  Emits: achievement:unlocked, user:streak_broken
+  Never: akses game engines langsung
+
+MUSABAQOH Module (src/modules/musabaqoh/)
+  Owns: musabaqoh_sessions, musabaqoh_results
+  Manages: WebSocket rooms state (via Redis)
+  Emits: musabaqoh:ended
+  Never: akses classroom member data langsung (hanya via service)
+
+AI Module (src/modules/ai/)
+  Owns: BullMQ jobs untuk AI tasks
+  Interfaces: OpenAI/Anthropic via Vercel AI SDK
+  Emits: ai:question_ready
+  Never: bypass review queue untuk auto-publish soal
+
+ANALYTICS Module (src/modules/analytics/)
+  Owns: daily_activity
+  Listens to: semua events untuk agregasi
+  Never: write ke tabel domain lain
+
+NOTIFICATION Module (src/modules/notification/)
+  Owns: notifications table
+  Listens to: achievement:unlocked, user:streak_broken, dll
+  Sends: email via Resend, in-app via WebSocket push
+  Never: business logic game/gamification
 ```
 
-### 4.2 Module Interface Contract
+---
+
+## 6. Frontend Rules (Web)
+
+### Component Hierarchy
+
+```
+app/[route]/page.tsx         ← Server Component (data fetching)
+  └── ClientWrapper.tsx      ← Client Component boundary
+        └── FeatureComponent.tsx  ← Interaktif, punya state
+              └── UIComponents    ← Pure display (shadcn/ui)
+```
+
+### State Management Decisions
+
+```
+Gunakan TanStack Query (useQuery/useMutation) untuk:
+  ✅ Data dari API (user profile, leaderboard, questions)
+  ✅ Data yang perlu di-cache atau di-refetch otomatis
+  ✅ Mutations dengan optimistic updates
+
+Gunakan Zustand untuk:
+  ✅ Auth state (user, accessToken)
+  ✅ Active game state (current session, real-time score)
+  ✅ UI state yang perlu diakses dari banyak komponen
+
+Gunakan useState/useReducer untuk:
+  ✅ UI state lokal (modal open/close, form state)
+  ✅ State yang tidak perlu dishare antar komponen
+```
+
+### API Call Pattern
 
 ```typescript
-// Setiap modul HARUS memiliki public interface yang jelas
-// Contoh: src/modules/user/user.interface.ts
-
-export interface IUserService {
-  findById(id: string): Promise<User | null>
-  findByEmail(email: string): Promise<User | null>
-  updateProfile(userId: string, data: UpdateProfileDto): Promise<Profile>
-  getStats(userId: string): Promise<UserStats>
+// ✅ BENAR — Custom hook yang menggunakan api-client
+// src/hooks/useQuestion.ts
+export function useQuestion(questionId: string) {
+  return useQuery({
+    queryKey: ["question", questionId],
+    queryFn: () => apiClient.get<Question>(`/api/v1/questions/${questionId}`),
+  });
 }
 
-// Implementation terpisah dari interface
-// src/modules/user/user.service.ts
-export class UserService implements IUserService {
-  constructor(private readonly repo: UserRepository) {}
+// ✅ BENAR — Gunakan hook di component
+function QuestionDisplay({ questionId }: Props) {
+  const { data, isLoading } = useQuestion(questionId);
   // ...
 }
 
-// DI Container (misal, manual atau menggunakan tsyringe)
-// src/modules/user/user.module.ts
-export function createUserModule(): IUserService {
-  const repo = new UserRepository(db)
-  return new UserService(repo)
+// ❌ SALAH — Direct fetch di component
+function QuestionDisplay() {
+  const [data, setData] = useState();
+  useEffect(() => {
+    fetch("http://localhost:3001/api/v1/questions/123"); // DILARANG
+  }, []);
 }
 ```
 
 ---
 
-## 5. Safe Modification Rules
+## 7. Safe Modification Rules
 
-### 5.1 Sebelum Membuat Perubahan Apapun
-
-```
-CHECKLIST PRE-MODIFICATION:
-
-□ 1. Apakah saya sudah membaca bagian relevan dari design.md?
-□ 2. Apakah perubahan ini melanggar salah satu dari 6 CONSTRAINT utama?
-□ 3. Apakah ada test yang akan fail akibat perubahan ini?
-□ 4. Apakah perubahan ini mempengaruhi API contract yang ada?
-□ 5. Apakah ada migrasi database yang diperlukan?
-□ 6. Apakah ada dokumen yang perlu diupdate?
-
-Jika jawaban atas pertanyaan 2 adalah YA → STOP, diskusikan dulu.
-Jika jawaban atas 3, 4, 5, 6 adalah YA → prepare plan sebelum coding.
-```
-
-### 5.2 Modifying Existing Code
+### Sebelum Modifikasi File Apapun
 
 ```
-RULE: Minimal Footprint Changes
-  Ubah sesedikit mungkin untuk mencapai tujuan.
-  Hindari refactoring "sekalian" yang tidak diminta.
-
-RULE: Backward Compatibility First
-  Perubahan API harus backward compatible selama mungkin.
-  Jika breaking change tidak dapat dihindari:
-    1. Versi baru endpoint (/api/v2/...)
-    2. Deprecation notice di response header
-    3. Sunset date untuk v1
-
-RULE: Database Migrations are Irreversible
-  Setiap migration harus memiliki:
-    - UP migration (apply)
-    - DOWN migration (rollback)
-  Test DOWN migration sebelum deploy.
-  Hindari DROP COLUMN di production tanpa soft-delete dulu.
+1. BACA file yang akan dimodifikasi (gunakan Antigravity view)
+2. IDENTIFIKASI semua dependensi file tersebut
+3. VERIFIKASI apakah perubahan akan break sesuatu
+4. SAJIKAN rencana ke developer sebelum execute (Mode Planning)
 ```
 
-### 5.3 High-Risk Areas (Extra Caution)
+### File Kritis — WAJIB Human Review
 
 ```
-⚠️ AREA BERISIKO TINGGI — double-check sebelum modifikasi:
+❗ CRITICAL FILES (jangan modifikasi tanpa explicit approval):
+   API:
+   - src/shared/middleware/auth.middleware.ts
+   - src/modules/auth/auth.service.ts
+   - src/modules/game/engines/*.ts (scoring logic)
+   - db/migrations/*.sql
+   - src/config/cors.config.ts
 
-1. src/modules/auth/*          → Security impact
-2. src/shared/middleware/*     → Affects all routes
-3. src/infrastructure/database → Schema changes are permanent
-4. Game engine scoring logic   → Affects fairness, ELO integrity
-5. ELO calculation             → Competitive integrity
-6. AI prompt templates         → Quality of AI output
-7. WebSocket room management   → Realtime correctness
-8. Any queue worker            → Async reliability
+   WEB:
+   - src/lib/api-client.ts
+   - src/stores/auth.store.ts
+   - src/middleware.ts (Next.js middleware)
+```
+
+### Database Migration Rules
+
+```
+WAJIB untuk setiap perubahan schema:
+  1. Buat migration file baru (jangan edit yang sudah ada)
+  2. Test migration di development dulu
+  3. Verifikasi rollback instruction berfungsi
+  4. Update changelog.md dengan migration notes
+
+DILARANG KERAS di production:
+  ❌ DROP COLUMN langsung
+  ❌ RENAME COLUMN (break existing queries)
+  ❌ Constraint yang bisa conflict dengan data existing
+
+Safe rename sequence (3 deployment):
+  Deploy 1: ADD COLUMN new_name + copy data
+  Deploy 2: Switch code ke new_name, keep old
+  Deploy 3: DROP COLUMN old_name
 ```
 
 ---
 
-## 6. Dependency Management
+## 8. Dependency Management
 
-### 6.1 Adding New Dependencies
-
-```
-Process untuk menambahkan dependency baru:
-
-1. CARI DULU apakah sudah ada solusi:
-   - Apakah fungsi ini bisa diimplementasi dengan library yang sudah ada?
-   - Apakah ada built-in Node.js API yang bisa digunakan?
-
-2. EVALUASI library:
-   - npm weekly downloads > 100K? (indikasi komunitas aktif)
-   - Last published < 6 bulan? (maintained)
-   - TypeScript support native?
-   - Bundle size (untuk frontend)?
-   - Security audit: npm audit
-
-3. DOKUMENTASIKAN keputusan:
-   Di CHANGELOG.md, section [Added]:
-   "Added: [library] v[version] — [alasan singkat kenapa dipilih]"
-
-4. PINNED VERSION:
-   Selalu pin exact version: "library": "1.2.3"
-   Bukan: "library": "^1.2.3" (untuk production deps)
-```
-
-### 6.2 Updating Dependencies
+### Menambah Dependency Baru
 
 ```
-Schedule update:
-  - Security patches: segera setelah tersedia
-  - Minor updates: monthly
-  - Major updates: per quarter, dengan testing penuh
+Sebelum install dependency baru, tanyakan:
+  1. Apakah sudah ada library existing yang bisa digunakan?
+  2. Bundle size impact? (khusus Web dependencies)
+  3. Maintenance status library? (last commit, open issues)
+  4. License compatibility (MIT/Apache preferred)?
+  5. Sudah ada di @talim-afkar/types jika shared?
 
-Process major update:
-  1. Baca changelog library
-  2. Test di branch terpisah
-  3. Run full test suite
-  4. Deploy ke staging, monitor 24 jam
-  5. Deploy ke production
+Setelah install:
+  → Update changelog.md section Dependency Changelog
+  → Tambahkan komentar justifikasi di package.json (jika non-obvious)
+```
+
+### Daftar Library yang Sudah Disetujui
+
+```
+API — Approved:
+  hono, drizzle-orm, drizzle-kit, zod, jose (JWT), bcryptjs,
+  socket.io, bullmq, ioredis, pino, @vercel/ai, openai,
+  @anthropic-ai/sdk, resend, vitest, supertest
+
+Web — Approved:
+  next, react, tailwindcss, shadcn-ui, framer-motion,
+  @tanstack/react-query, zustand, socket.io-client,
+  react-hook-form, dnd-kit, zod, vitest, @testing-library/react
+
+BELUM disetujui (evaluasi dulu):
+  → GraphQL client, Prisma, tRPC, React Native Web,
+    Elasticsearch client (untuk MVP, gunakan PG FTS dulu)
 ```
 
 ---
 
-## 7. Task Decomposition Strategy
+## 9. Task Decomposition Strategy (Antigravity)
 
-### 7.1 Cara Memecah Tugas Besar
-
-Ketika mendapat instruksi besar seperti "Implementasi fitur Duel Afkar", pecah menjadi:
+### Cara Memecah Task di Antigravity Agent Manager
 
 ```
-LEVEL 1 — Epic:
-  "Implementasi Duel Afkar Mode"
+Task besar → Pecah menjadi subtask yang:
+  - Setiap subtask selesai dalam 1 sesi Antigravity
+  - Setiap subtask menghasilkan kode yang bisa di-commit
+  - Setiap subtask punya test yang bisa dijalankan
 
-LEVEL 2 — Stories:
-  1. Setup WebSocket infrastructure untuk Duel
-  2. Implementasi matchmaking system
-  3. Implementasi game session management
-  4. Implementasi real-time answer processing
-  5. Implementasi ELO rating update
-  6. Frontend: Duel lobby & game UI
-  7. Frontend: Result screen
+CONTOH BAIK (Kilat Fiqih Engine):
+  Subtask 1: Buat game session schema + migration
+  Subtask 2: Implementasi scoring algorithm + unit tests
+  Subtask 3: Buat API endpoints (start/answer/end)
+  Subtask 4: Integrasi dengan event bus (XP, streak)
+  Subtask 5: Build game UI components
+  Subtask 6: Integrasi frontend dengan API endpoints
 
-LEVEL 3 — Tasks (per story):
-  Story 1: Setup WebSocket:
-    1.1 Install dan configure Socket.io
-    1.2 Create WebSocket handler module
-    1.3 Setup Redis adapter untuk horizontal scaling
-    1.4 Write connection/disconnect handlers
-    1.5 Write integration test untuk WS connection
-
-LEVEL 4 — Implementation:
-  Task 1.1: Install Socket.io
-    - npm install socket.io
-    - npm install @types/socket.io
-    - Update changelog.md
+CONTOH BURUK:
+  "Implementasi sistem game" — terlalu besar, tak terkontrol
 ```
 
-### 7.2 Estimasi Kompleksitas
-
-Sebelum mulai mengerjakan task, estimasi:
+### Paralel vs Sequential Tasks
 
 ```
-XS (< 30 menit):  Bugfix sederhana, update konfigurasi, update docs
-S  (30 menit–2 jam): Fitur kecil, endpoint baru, component UI sederhana
-M  (2–8 jam):     Fitur medium dengan testing, domain logic baru
-L  (1–3 hari):    Fitur kompleks, multi-domain, WebSocket feature
-XL (> 3 hari):    Decompose lebih lanjut sebelum mulai
+Di Antigravity, agen dapat berjalan paralel. Gunakan ini untuk:
+  PARALLEL OK:
+  - Unit tests sambil menulis implementation
+  - Documentation update sambil mengerjakan code
+  - Dua fitur yang tidak saling bergantung
+
+  SEQUENTIAL REQUIRED:
+  - Database migration → sebelum service code yang bergantung
+  - API endpoint → sebelum frontend hook yang konsumsi
+  - Auth middleware → sebelum protected routes
 ```
 
----
+### Context Preservation Antar Sesi
 
-## 8. Context Preservation Strategy
-
-### 8.1 Context yang Harus Selalu Tersedia
-
-Saat memulai sesi coding baru, pastikan kamu memiliki konteks:
+Karena Antigravity dapat berjalan multi-sesi:
 
 ```
-MINIMUM CONTEXT:
-  ✓ Dokumen srs.md — untuk memahami WHAT kita bangun
-  ✓ Dokumen design.md — untuk memahami HOW kita bangun
-  ✓ File yang akan dimodifikasi
-  ✓ Test files yang relevan
+Setiap sesi WAJIB dimulai dengan:
+  1. Baca todo.md → lihat status task yang sedang dikerjakan
+  2. Baca changelog.md [Unreleased] → lihat apa yang sudah selesai
+  3. Cek git log terbaru → verifikasi state terkini
 
-EXTENDED CONTEXT (untuk fitur kompleks):
-  ✓ Seluruh module yang terlibat
-  ✓ Shared types yang digunakan
-  ✓ Database schema yang relevan (Drizzle schema files)
-  ✓ Related routes dan middleware
-```
-
-### 8.2 State Preservation untuk Long Tasks
-
-```
-Untuk tugas yang tidak bisa selesai dalam satu sesi:
-
-1. CHECKPOINT COMMENT di kode:
-   // PROGRESS: Sudah selesai matchmaking logic.
-   // TODO NEXT: Implementasi answer processing (lihat game.service.ts)
-   // STATUS: Test belum ditulis untuk fungsi ini
-
-2. Selalu commit di checkpoint yang logis:
-   git commit -m "feat(duel): add matchmaking queue logic [WIP]"
-
-3. Update todo.md dengan status terkini:
-   - [x] Task yang selesai
-   - [ ] Task yang belum
-   - [~] Task yang sedang in-progress
-```
-
----
-
-## 9. Prompt Chaining Strategy
-
-### 9.1 Untuk Fitur Kompleks Multi-Step
-
-Ketika mengerjakan fitur besar, chain prompt secara terstruktur:
-
-```
-Step 1: Architecture Review
-  Prompt: "Baca design.md section [X] dan srs.md section [Y].
-           Jelaskan approach kamu untuk mengimplementasi [fitur].
-           Identifikasi dependencies dan risiko."
-
-Step 2: Interface Design
-  Prompt: "Berdasarkan approach yang sudah disetujui, desain
-           TypeScript interfaces untuk [fitur]. Hanya interfaces,
-           belum implementasi."
-
-Step 3: Test-First
-  Prompt: "Tulis unit tests untuk service [X] berdasarkan
-           interface yang sudah dibuat. Mock semua dependencies."
-
-Step 4: Implementation
-  Prompt: "Implementasi [service/repository/route] sehingga
-           semua test yang sudah ditulis pass."
-
-Step 5: Integration Test
-  Prompt: "Tulis integration test untuk endpoint [X] yang
-           melibatkan database real (test database)."
-
-Step 6: Documentation
-  Prompt: "Update changelog.md dengan fitur yang baru selesai.
-           Update srs.md jika ada hal yang berubah dari requirement."
-```
-
-### 9.2 Anti-Pattern dalam Prompt Chaining
-
-```
-❌ JANGAN: "Implementasi semua fitur game dalam satu prompt"
-❌ JANGAN: Lanjutkan task tanpa commit checkpoint
-❌ JANGAN: Skip architecture step langsung ke coding
-❌ JANGAN: Ignore test step karena "bisa belakangan"
-
-✅ LAKUKAN: Satu step per session jika fitur kompleks
-✅ LAKUKAN: Validate output setiap step sebelum lanjut
-✅ LAKUKAN: Commit setelah setiap step yang meaningful
+Setiap sesi WAJIB diakhiri dengan:
+  1. Update todo.md → ubah [ ] ke [x] untuk task selesai
+  2. Update changelog.md → tambah entry di [Unreleased]
+  3. Pastikan semua tests pass
+  4. Commit dengan message yang deskriptif
 ```
 
 ---
 
 ## 10. Testing Workflow
 
-### 10.1 Testing Pyramid
+### Test Strategy per Layer
 
 ```
-         E2E Tests (Playwright)
-        /     ~5% of test suite     \
-       /  Critical user journeys     \
-      ────────────────────────────────
-     Integration Tests (Supertest/Vitest)
-    /        ~25% of test suite          \
-   /   API endpoints, DB queries, WS     \
-  ──────────────────────────────────────────
- Unit Tests (Vitest)
-/            ~70% of test suite             \
-/  Service logic, utilities, calculations   \
-────────────────────────────────────────────
+API Testing:
+  Unit Tests (Vitest):
+    - Game engines scoring logic (WAJIB 100% coverage)
+    - ELO calculation (WAJIB 100% coverage)
+    - Zod schema validation
+    - Service methods dengan mocked repositories
+
+  Integration Tests (Vitest + Supertest):
+    - Auth endpoints (register, login, refresh, logout)
+    - Game session lifecycle (start → answer → end)
+    - Classroom CRUD
+    - WebSocket events (dengan mock Socket.io)
+
+  Test Database:
+    - Dedicated test DB (talimafkar_test)
+    - Seed di beforeEach, cleanup di afterEach
+    - Drizzle transaction rollback untuk test isolation
+
+Web Testing:
+  Unit Tests (Vitest):
+    - Custom hooks (useGameSession, useLeaderboard)
+    - Utility functions
+    - Zustand stores
+
+  Component Tests (@testing-library/react):
+    - QuestionCard renders correctly
+    - CountdownTimer counts down
+    - LiveLeaderboard updates on data change
 ```
 
-### 10.2 Test File Structure
-
-```typescript
-// src/modules/game/game.service.test.ts
-
-import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { GameService } from './game.service'
-import { createMockQuestionService } from '../content/__mocks__/question.service.mock'
-
-describe('GameService', () => {
-  let gameService: GameService
-
-  beforeEach(() => {
-    gameService = new GameService({
-      questionService: createMockQuestionService(),
-      // ... other mocks
-    })
-  })
-
-  describe('calculateKilatScore', () => {
-    it('returns 100 points for correct answer with 15 seconds remaining', () => {
-      const result = gameService.calculateKilatScore({
-        isCorrect: true,
-        timeRemainingMs: 15000,
-        streakCount: 0,
-      })
-      expect(result).toBe(100)
-    })
-
-    it('returns 0 points for wrong answer', () => {
-      const result = gameService.calculateKilatScore({
-        isCorrect: false,
-        timeRemainingMs: 10000,
-        streakCount: 0,
-      })
-      expect(result).toBe(0)
-    })
-
-    it('adds streak bonus of 20 points for 3 consecutive correct', () => {
-      const result = gameService.calculateKilatScore({
-        isCorrect: true,
-        timeRemainingMs: 15000,
-        streakCount: 3,
-      })
-      expect(result).toBe(120) // 100 + 20 bonus
-    })
-  })
-})
-```
-
-### 10.3 Coverage Requirements
+### Coverage Requirements
 
 ```
-Minimum coverage (tidak boleh dikurangi):
-  - Statements:  80%
-  - Branches:    75%
-  - Functions:   85%
-  - Lines:       80%
+WAJIB 100% coverage:
+  - Game scoring algorithms (semua engines)
+  - ELO calculation
+  - XP calculation
+  - Streak logic
 
-Prioritas coverage:
-  1. Game scoring logic → 100% coverage wajib
-  2. ELO calculation → 100% coverage wajib
-  3. Auth logic → 100% coverage wajib
-  4. Payment/billing (jika ada) → 100% coverage wajib
-  5. Semua service → > 80%
-  6. Utilities → > 90%
+Target 80%+:
+  - Service layer
+  - Custom hooks
+  - Utility functions
+
+Nice to have:
+  - UI components
+  - Route handlers (covered oleh integration tests)
 ```
 
 ---
 
 ## 11. Validation Workflow
 
-### 11.1 Sebelum Commit
-
-```bash
-# Run sebelum setiap commit (atau setup di pre-commit hook)
-npm run lint              # ESLint + Prettier check
-npm run type-check        # tsc --noEmit
-npm run test:unit         # Vitest unit tests
-npm run test:integration  # Integration tests (butuh DB)
-
-# Jika semua pass → commit OK
-# Jika ada yang fail → FIX DULU, baru commit
-```
-
-### 11.2 Sebelum Merge ke Main
-
-```bash
-npm run test:e2e          # Playwright E2E tests
-npm run build             # Pastikan build tidak error
-npm run db:migrate:check  # Pastikan tidak ada migration yang pending
-```
-
-### 11.3 Validasi API Changes
+### Sebelum Commit
 
 ```
-Setiap perubahan API endpoint:
-  1. Update OpenAPI spec (jika menggunakan auto-generate: pastikan types update)
-  2. Verify semua client (web, mobile) masih compatible
-  3. Jika breaking change: buat versi baru endpoint
+API:
+  npm run lint          ← ESLint check
+  npm run type-check    ← TypeScript strict check
+  npm run test:unit     ← Unit tests
 
-Setiap perubahan WebSocket events:
-  1. Update event schema di shared/events/
-  2. Update semua handler yang listen event tersebut
-  3. Update frontend socket client
-  4. Test dengan 2 clients simultaneously
+Web:
+  npm run lint
+  npm run type-check
+  npm run build         ← Next.js build (catches errors)
+  npm run test:unit
+```
+
+### API Contract Validation
+
+```
+Jika mengubah API response format:
+  1. Update @talim-afkar/types package
+  2. Bump versi package (breaking = major)
+  3. Update web untuk menggunakan types baru
+  4. Update srs.md section 22
+  5. Update changelog.md
+
+Jika menambah endpoint baru:
+  1. Implementasi di API
+  2. Tambahkan types di @talim-afkar/types
+  3. Buat hook di web/src/hooks/
+  4. Update srs.md section 22
 ```
 
 ---
 
 ## 12. Documentation Update Workflow
 
-### 12.1 Kapan Dokumentasi Harus Diupdate
+### Setelah Setiap Task Selesai
 
 ```
-WAJIB update saat:
-  - Menambah/mengubah/menghapus API endpoint → update srs.md section 22
-  - Mengubah arsitektur signifikan → update design.md
-  - Menambah dependency baru → update changelog.md
-  - Merilis fitur baru → update changelog.md
-  - Mengubah database schema → update design.md section 5
-  - Mengubah deployment → update design.md section 15
+Wajib update (sebelum commit final):
+  1. changelog.md → tambah entry di [Unreleased]
+  2. todo.md → update status task [x]
 
-OPSIONAL (tapi dianjurkan):
-  - Bugfix kecil → minimal satu baris di changelog
-  - Refactor internal yang tidak mengubah behavior → internal comment cukup
-```
+Update jika ada perubahan signifikan:
+  3. srs.md → jika requirement berubah atau endpoint baru
+  4. design.md → jika arsitektur berubah
+  5. README.md → jika ada perubahan cara setup/run
 
-### 12.2 Changelog Entry Format
-
-```markdown
-## [1.2.0] - 2026-06-15
-
-### Added
-- [Game] Kilat Fiqih solo mode sepenuhnya implementasi
-- [AI] AI question generation pipeline dengan review queue
-
-### Changed
-- [Auth] Refresh token rotation ditambahkan untuk keamanan lebih baik
-
-### Fixed
-- [Game] Bug: skor Kilat Fiqih tidak menghitung streak bonus dengan benar
-
-### Security
-- [Auth] Rate limiting pada endpoint login: 5 attempts per 15 menit
-
-### Migration Notes
-- Run: `npm run db:migrate` setelah update (tambahan kolom `streak_bonus`)
+Format entry changelog:
+  - [Domain] Deskripsi singkat dalam Bahasa Indonesia
+  Domain: Auth, Game, Content, Learning, Gamification, Classroom,
+          AI, Analytics, Notification, Admin, Infra, Docs, Security, WS
 ```
 
 ---
 
 ## 13. Git Workflow
 
-### 13.1 Commit Message Convention
+### Commit Message Convention
 
 ```
 Format: <type>(<scope>): <description>
@@ -740,213 +728,222 @@ Types:
   chore     → Tooling, dependency, config
   perf      → Performance improvement
   security  → Security fix
+  migration → Database migration
 
-Scopes (berdasarkan domain):
+Scopes:
   auth, user, game, content, learning, gamification,
   classroom, ai, analytics, notification, admin,
-  ws (WebSocket), queue, infra, docs
+  ws, queue, infra, docs, types
 
 Contoh:
   feat(game): add Kilat Fiqih streak bonus calculation
   fix(auth): fix refresh token not invalidated on logout
-  docs(design): update WebSocket architecture diagram
   feat(ai): add question generation queue worker
-  test(game): add unit tests for ELO calculation
-  chore(deps): update Socket.io to v4.8.0
+  migration(db): add learning_progressions table
+  chore(types): update @talim-afkar/types v1.2.0
 ```
 
-### 13.2 Branch Rules
+### Branch Rules
 
 ```
-Branch naming:
-  feature/[ticket-id]-[short-description]     → feature/TA-42-kilat-fiqih-engine
-  fix/[ticket-id]-[short-description]         → fix/TA-55-elo-calculation-bug
-  hotfix/[short-description]                  → hotfix/auth-token-leak
-  docs/[description]                          → docs/update-design-ws-section
-  chore/[description]                         → chore/upgrade-socket-io
+main         → Production only
+develop      → Staging
+feature/*    → Feature development → PR ke develop
+fix/*        → Bug fix → PR ke develop
+hotfix/*     → Emergency → PR ke main + cherry-pick ke develop
 
-Rules:
-  - main branch: production-ready only
-  - develop branch: staging, pre-production testing
-  - feature/* → PR ke develop
-  - hotfix/* → PR ke main + cherry-pick ke develop
-  - PR wajib: review (minimal 1 manusia atau 1 AI review checkpoint)
-  - PR wajib: semua CI checks pass
+Naming:
+  feature/TA-42-kilat-fiqih-engine
+  fix/TA-55-elo-calculation-bug
+  hotfix/auth-token-leak
 ```
 
 ---
 
-## 14. Refactoring Rules
+## 14. Antigravity-Specific Behaviors
 
-### 14.1 When to Refactor
-
-```
-Refactor BOLEH dilakukan ketika:
-  - Kode duplikasi yang sama muncul 3 kali atau lebih (Rule of Three)
-  - Function melebihi 50 baris
-  - Cyclomatic complexity > 10
-  - Test coverage di bawah target
-
-Refactor TIDAK BOLEH dilakukan:
-  - Sebelum fitur baru diimplementasi ("nanti sekalian refactor")
-    → Bahaya: bercampur antara fitur baru dan refactor lama
-  - Saat ada bug kritis yang sedang difix
-  - Tanpa test suite yang mecover kode yang akan direfactor
-
-Process refactor yang aman:
-  1. Pastikan test coverage ada
-  2. Refactor dalam commit TERPISAH dari feature/fix
-  3. Commit message: "refactor(scope): [description]"
-  4. Verify semua tests masih pass setelah refactor
-```
-
-### 14.2 Database Schema Refactoring
+### Cara Menggunakan Antigravity Browser (Sub-Agen)
 
 ```
-PERATURAN KERAS:
-  - Tidak boleh DROP COLUMN pada migration production
-  - Tidak boleh RENAME COLUMN (akan break existing queries)
-  - Selalu gunakan ADD COLUMN + migrate data + RENAME (3 deployment cycle)
+Gunakan Antigravity Browser untuk:
+  ✅ Membaca dokumentasi library (docs.hono.dev, orm.drizzle.team)
+  ✅ Verifikasi API response format dari documentation
+  ✅ Membaca error message di browser console (jika ada preview UI)
+  ✅ Verifikasi UI/UX setelah implementasi komponen
 
-Safe rename sequence:
-  Deploy 1: ADD COLUMN new_name (copy data from old_name)
-  Deploy 2: Switch code to use new_name, keep old_name
-  Deploy 3: DROP COLUMN old_name (setelah dipastikan tidak digunakan)
+TIDAK BOLEH menggunakan untuk:
+  ❌ Membaca internal company data
+  ❌ Akses ke repository private tanpa explicit permission
+  ❌ Domain di luar browser-allowlist
+```
+
+### Cara Menggunakan Antigravity Terminal
+
+```
+Perintah yang BOLEH dijalankan otomatis:
+  npm run lint
+  npm run type-check
+  npm run test:unit
+  npm run test:integration
+  npm run build
+  ls, cat, grep (read-only)
+
+Perintah yang WAJIB minta review sebelum dijalankan:
+  npm run db:migrate    ← Modifikasi database
+  npm run db:seed       ← Insert data
+  git push              ← Deploy changes
+  docker-compose up/down
+  rm, mv (destructive operations)
+  curl ke external services
+```
+
+### Cara Menyajikan Code Diffs
+
+```
+Sebelum apply perubahan signifikan, sajikan Artefak dengan format:
+
+  📁 FILE: src/modules/game/game.service.ts
+
+  + async startKilatFiqih(userId: string): Promise<GameSession> {
+  +   const questions = await this.questionService.getForGame('kilat_fiqih')
+  +   const session = await this.createSession({ userId, mode: 'kilat_fiqih' })
+  +   await this.redisClient.set(`game:session:${session.id}`, JSON.stringify({...}))
+  +   return session
+  + }
+
+  [APPROVE atau REQUEST REVISION sebelum apply]
 ```
 
 ---
 
 ## 15. AI Collaboration Strategy
 
-### 15.1 Cara Efektif Menggunakan AI Agents
+### Cara Efektif Memberikan Instruksi ke Claude di Antigravity
 
 ```
 CONTEXT INJECTION yang efektif:
   "Kamu bekerja pada Ta'lim Afkar — platform pembelajaran Islam.
+   Arsitektur: Client-Server terpisah (API: Hono.js, Web: Next.js).
    Baca design.md section [X] sebelum menjawab.
-   Constraint yang harus dipatuhi: [list dari section 3]."
+   Kamu sedang bekerja di repo: [talim-afkar-api / talim-afkar-web]
+   Constraint yang harus dipatuhi: [list dari section 4]."
 
 SCOPE BOUNDARIES yang jelas:
   ✅ "Implementasi hanya file: src/modules/game/game.service.ts"
-  ❌ "Implementasi game system" (terlalu luas, tak terkontrol)
+  ✅ "Buat endpoint POST /api/v1/games/kilat/start di API repo"
+  ❌ "Implementasi game system" (terlalu luas)
 
-VALIDATION CHECKPOINT:
-  "Sebelum menulis kode, jelaskan approach kamu:
+VALIDATION CHECKPOINT (tanya sebelum code):
+  "Sebelum menulis kode, jelaskan:
    1. File mana yang akan dimodifikasi?
    2. Apakah ada domain boundary yang dilanggar?
-   3. Apakah memerlukan migration database?
-   4. Bagaimana cara test implementasi ini?"
+   3. Apakah perlu database migration?
+   4. Apakah ada perubahan API contract yang mempengaruhi Web?
+   5. Bagaimana cara test implementasi ini?"
 ```
 
-### 15.2 AI Agent Outputs yang Harus Selalu Direview
+### AI Agent Outputs yang Wajib Human Review
 
 ```
-Wajib human review sebelum commit/deploy:
-  ☑ Semua AI-generated security code (auth, permission)
+WAJIB review sebelum commit/deploy:
+  ☑ Semua auth & security code
   ☑ Semua database migration files
-  ☑ Semua perubahan pada game scoring/ELO logic
-  ☑ Semua AI-generated API contracts
-  ☑ Perubahan pada WebSocket event handling
+  ☑ Semua game scoring / ELO logic
+  ☑ Semua perubahan API contract
+  ☑ Semua WebSocket event handlers
+  ☑ Perubahan CORS configuration
+  ☑ Semua AI prompt templates
 
 Boleh commit dengan AI review saja:
   ☐ Test files
   ☐ Documentation updates
   ☐ UI components (non-critical)
-  ☐ Utility functions dengan test coverage > 90%
+  ☐ Utility functions dengan coverage > 90%
+  ☐ Seed data scripts
 ```
 
 ---
 
 ## 16. Anti-Chaos Engineering Rules
 
-### 16.1 The Chaos Prevention Checklist
+### Chaos Prevention Checklist
 
 ```
-Setiap sesi development, tanyakan:
-
-□ Apakah saya tau EXACTLY file mana yang akan berubah?
-□ Apakah perubahan ini minimal untuk tujuan yang ingin dicapai?
-□ Apakah ada cara yang lebih sederhana?
-□ Apakah saya sudah membaca existing code sebelum menulis?
-□ Apakah saya akan merusak sesuatu yang saat ini berfungsi?
-□ Apakah saya menambahkan lebih complexity dari yang diminta?
+Setiap task, tanyakan:
+□ Saya tau EXACTLY file mana yang akan berubah?
+□ Perubahan ini minimal untuk tujuan yang ingin dicapai?
+□ Ada cara yang lebih sederhana?
+□ Sudah membaca existing code sebelum menulis?
+□ Tidak akan merusak sesuatu yang saat ini berfungsi?
+□ Tidak menambah complexity lebih dari yang diminta?
+□ Task ini di repo yang benar (API atau Web)?
+□ Jika mengubah API — sudah update Web juga?
+□ Jika mengubah DB schema — sudah ada migration?
 ```
 
-### 16.2 Stop Conditions
+### Stop Conditions
 
-Hentikan pengerjaan dan minta klarifikasi jika:
+Hentikan dan minta klarifikasi jika:
 
 ```
 🛑 Requirement tidak jelas atau ambigu
-🛑 Implementasi akan melanggar CONSTRAINT dari section 3
-🛑 Estimasi complexity jauh lebih besar dari yang diperkirakan
+🛑 Implementasi akan melanggar CONSTRAINT dari section 4
+🛑 Kompleksitas jauh lebih besar dari yang diperkirakan
 🛑 Ada konflik antara srs.md dan design.md
 🛑 Perubahan akan mempengaruhi > 5 domain sekaligus
+🛑 Perubahan API contract yang tidak direncanakan
 🛑 Tidak ada test coverage untuk kode kritis yang akan diubah
+🛑 Task memerlukan credentials/secrets yang tidak tersedia
 ```
 
 ---
 
 ## 17. Technical Debt Prevention
 
-### 17.1 Definisi Technical Debt dalam Konteks Ini
+### Definisi
 
 ```
 ACCEPTABLE debt (short-term, tracked):
-  - TODO comment dengan ticket number
-  - Simplified implementation dengan note untuk improvement
-  - Temporary workaround dengan expiry date noted
+  - TODO comment dengan ticket number: // TODO(TA-123): ...
+  - Simplified implementation dengan upgrade note
+  - Temporary workaround dengan expiry date
 
-UNACCEPTABLE debt (harus langsung diselesaikan):
+UNACCEPTABLE debt (selesaikan sekarang):
   - Security vulnerabilities
-  - Missing tests untuk kritical logic
+  - Missing tests untuk critical logic
   - Broken error handling
   - Crossing domain boundaries
-  - Undocumented breaking changes
+  - Undocumented breaking API changes
+  - Direct DB access dari Web
 
-Format TODO comment:
-  // TODO(TA-123): Replace with proper semantic search when Elasticsearch is setup
-  // FIXME(TA-456): Race condition possible jika concurrent requests > 100
-  // HACK: Temporary workaround for Socket.io race condition, fix by v1.2
-```
-
-### 17.2 Debt Tracking
-
-```
-Setiap TODO/FIXME/HACK harus:
-  1. Memiliki ticket/issue reference
-  2. Di-track dalam todo.md atau issue tracker
-  3. Tidak boleh ada > 30 hari tanpa tindakan
-
-Debt yang dibiarkan > 30 hari dianggap:
-  - Bug yang tertunda
-  - Technical risk yang aktif
-  - Penghalang untuk feature baru
+Format TODO:
+  // TODO(TA-123): Ganti dengan semantic search saat Elasticsearch aktif
+  // FIXME(TA-456): Race condition possible jika concurrent > 100
+  // HACK: Workaround untuk Socket.io race, fix by v1.2
 ```
 
 ---
 
-## Appendix: Quick Reference
+## Appendix: File Modification Map
 
-### File Modification Map
+| Perubahan            | Files API                                 | Files Web                 | Docs                       |
+| -------------------- | ----------------------------------------- | ------------------------- | -------------------------- |
+| DB schema baru       | db/schema/\*.ts, migration                | —                         | design.md sec 6, changelog |
+| API endpoint baru    | modules/[domain]/\*.ts                    | hooks/use[Feature].ts     | srs.md sec 22, changelog   |
+| API response berubah | modules/[domain]/\*.ts                    | @talim-afkar/types, hooks | srs.md sec 22, changelog   |
+| Event bus baru       | shared/events/event-bus.ts, handler       | —                         | design.md sec 7, changelog |
+| Game mechanic        | modules/game/engines/\*.ts, test          | game/page.tsx, hooks      | srs.md sec 8, changelog    |
+| ELO formula          | modules/game/engines/duel-afkar.engine.ts | —                         | srs.md sec 8.3, changelog  |
+| AI prompt            | modules/ai/prompts/\*.ts                  | —                         | changelog (AI Changes)     |
+| Achievement baru     | modules/gamification/achievements/        | —                         | srs.md sec 11, changelog   |
+| New dependency       | package.json (API)                        | package.json (Web)        | changelog (Dependency)     |
+| CORS config          | config/cors.config.ts                     | —                         | changelog (Security)       |
 
-| Perubahan | Files yang Terdampak |
-|-----------|---------------------|
-| Skema database | `db/schema/*.ts`, `design.md sec 5`, migration file |
-| API endpoint baru | `modules/[domain]/[domain].routes.ts`, `srs.md sec 22` |
-| Event bus baru | `shared/events/events.ts`, handler files |
-| Game mechanic change | `modules/game/engines/*.ts`, `srs.md sec 8`, test files |
-| ELO formula change | `modules/game/engines/duel-afkar.engine.ts`, `srs.md sec 8.3` |
-| AI prompt change | `modules/ai/prompts/*.ts`, `changelog.md` |
-| New achievement | `modules/gamification/achievements/`, `srs.md sec 11.2` |
-| Config change | `.env.example`, deployment docs |
-| New dependency | `package.json`, `changelog.md` |
-
-### Emergency Protocols
+## Appendix: Emergency Protocols
 
 ```
 Production Bug Terkonfirmasi:
-  1. Buat hotfix branch dari main
+  1. Buat hotfix branch dari main (API atau Web — pisah)
   2. Minimal fix — jangan refactor sekalian
   3. Test fix secara isolated
   4. Deploy ke staging, verify 15 menit
@@ -954,11 +951,21 @@ Production Bug Terkonfirmasi:
   6. Post-mortem dalam 24 jam
   7. Add regression test
 
-Data Corruption Detected:
-  1. IMMEDIATELY flag ke team
-  2. Freeze affected feature (feature flag)
-  3. Assess scope of corruption
-  4. Restore from backup jika perlu
-  5. Run data integrity checks
-  6. Document incident
+API Down (WebSocket/REST):
+  1. Check Railway/VPS health dashboard
+  2. Check /health endpoint
+  3. Check PostgreSQL dan Redis connectivity
+  4. Jika perlu: rollback ke Docker image sebelumnya
+
+Web Down (Vercel):
+  1. Check Vercel deployment status
+  2. Rollback ke previous deployment di Vercel dashboard
+  3. Verify NEXT_PUBLIC_API_URL masih valid
+
+Data Corruption:
+  1. Segera freeze affected feature (feature flag atau deploy revert)
+  2. Assess scope corruption
+  3. Restore dari backup PostgreSQL
+  4. Run data integrity checks
+  5. Document incident di changelog (Security section)
 ```
